@@ -11,6 +11,7 @@ let uiController = (function () {
     totalExp: ".budget__expenses--value",
     percentage: ".budget__expenses--percentage",
     addBtn: ".add__btn",
+    container: ".container",
   };
 
   let nodeListForEach = function (nodeList, callback) {
@@ -19,6 +20,11 @@ let uiController = (function () {
     }
   };
   return {
+    displayDelete: function (id) {
+      let el = document.getElementById(id);
+      el.parentNode.removeChild(el);
+    },
+
     showBudget: function (budget) {
       if (budget.tusuv === 0) {
         document.querySelector(DOMStrings.budgetValue).textContent =
@@ -115,6 +121,7 @@ let uiController = (function () {
     getPublicDOM: function () {
       return {
         addBtn: DOMStrings.addBtn,
+        container: DOMStrings.container,
       };
     },
   };
@@ -158,6 +165,15 @@ let financeController = (function () {
   };
 
   return {
+    deleteItem: function (type, id) {
+      let ids = data.Items[type].map(function (el) {
+        return el.id;
+      });
+
+      let index = ids.indexOf(id);
+      data.Items[type].splice(index, 1);
+    },
+
     addItem: function (type, desc, val) {
       let id, item;
       if (data.Items[type].length === 0) id = 1;
@@ -174,7 +190,10 @@ let financeController = (function () {
       calculateTotal("inc");
       calculateTotal("exp");
 
-      data.huvi = Math.round((data.total.exp / data.total.inc) * 100);
+      if (data.total.exp === 0 || data.total.inc === 0) data.huvi = 0;
+      else {
+        data.huvi = Math.round((data.total.exp / data.total.inc) * 100);
+      }
       data.tusuv = data.total.inc - data.total.exp;
     },
 
@@ -206,19 +225,39 @@ let appController = (function (uiCtrl, fnCtrl) {
       // 3. Орлого зарлагийн тохирох хэсэгт дэлгэцэнд үзүүлнэ
       uiCtrl.addListItem(input.type, item);
       uiCtrl.clearFields();
-      // 4. Төсвийг тооцоолно
-      fnCtrl.tusviigTootsooloh();
-      // 5. Үлдэгдлийг тооцоолно
-      let budget = fnCtrl.getBudget();
-      // 6. Дэлгэцэнд үлдэгдлийг харуулна};
-      uiCtrl.showBudget(budget);
-      console.log(budget);
+      update();
     }
   };
 
+  let update = function () {
+    // 4. Төсвийг тооцоолно
+    fnCtrl.tusviigTootsooloh();
+    // 5. Үлдэгдлийг тооцоолно
+    let budget = fnCtrl.getBudget();
+    // 6. Дэлгэцэнд үлдэгдлийг харуулна};
+    uiCtrl.showBudget(budget);
+  };
+
   let setupEventListeners = function () {
-    // Дэлгэцний DOM
     let DOM = uiCtrl.getPublicDOM();
+    // Delete
+    document
+      .querySelector(DOM.container)
+      .addEventListener("click", function (event) {
+        let nodeId =
+          event.target.parentNode.parentNode.parentNode.parentNode.id;
+        // nodeId дотор ямар нэгэн юм байвал true байхгүй бол false болгож хувиргана
+        if (nodeId) {
+          let arr = nodeId.split("-");
+          let type = arr[0];
+          // Convert String to Number;
+          let id = parseInt(arr[1]);
+          fnCtrl.deleteItem(type, id);
+          uiCtrl.displayDelete(nodeId);
+          update();
+        }
+      });
+    // Дэлгэцний DOM
     // Correct товчин дээр дарахад үүсэх эвент листенер
     document.querySelector(DOM.addBtn).addEventListener("click", function () {
       ctrlAddItem();
