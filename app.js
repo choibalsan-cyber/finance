@@ -6,6 +6,10 @@ let uiController = (function () {
     inputValue: ".add__value",
     incomeList: ".income__list",
     expenseList: ".expenses__list",
+    budgetValue: ".budget__value",
+    totalInc: ".budget__income--value",
+    totalExp: ".budget__expenses--value",
+    percentage: ".budget__expenses--percentage",
     addBtn: ".add__btn",
   };
 
@@ -15,6 +19,40 @@ let uiController = (function () {
     }
   };
   return {
+    showBudget: function (budget) {
+      if (budget.tusuv === 0) {
+        document.querySelector(DOMStrings.budgetValue).textContent =
+          budget.tusuv;
+      } else {
+        document.querySelector(
+          DOMStrings.budgetValue
+        ).textContent = `+ ${budget.tusuv}`;
+      }
+      if (budget.totalInc === 0) {
+        document.querySelector(DOMStrings.totalInc).textContent =
+          budget.totalInc;
+      } else {
+        document.querySelector(
+          DOMStrings.totalInc
+        ).textContent = `+ ${budget.totalInc}`;
+      }
+      if (budget.totalExp === 0) {
+        document.querySelector(DOMStrings.totalExp).textContent =
+          budget.totalExp;
+      } else {
+        document.querySelector(
+          DOMStrings.totalExp
+        ).textContent = `- ${budget.totalExp}`;
+      }
+      if (budget.huvi === 0) {
+        document.querySelector(DOMStrings.percentage).textContent = budget.huvi;
+      } else {
+        document.querySelector(
+          DOMStrings.percentage
+        ).textContent = `${budget.huvi}%`;
+      }
+    },
+
     clearFields: function () {
       // Цэвэрлэх листүүд Nodelist
       let fields = document.querySelectorAll(
@@ -23,12 +61,11 @@ let uiController = (function () {
 
       // Листийг массив руу хөрвүүлэх
       let fieldsArr = Array.prototype.slice.call(fields);
-      console.log(fieldsArr);
 
       fieldsArr.forEach(function (el) {
         el.value = "";
       });
-      console.log(fieldsArr);
+
       fieldsArr[0].focus();
     },
 
@@ -143,9 +180,9 @@ let financeController = (function () {
 
     getBudget: function () {
       return {
+        tusuv: data.tusuv,
         totalInc: data.total.inc,
         totalExp: data.total.exp,
-        tusuv: data.tusuv,
         huvi: data.huvi,
       };
     },
@@ -161,8 +198,7 @@ let appController = (function (uiCtrl, fnCtrl) {
   let ctrlAddItem = function () {
     // 1. Дэлгэцнээс өгөгдлүүдийг авна.
     let input = uiCtrl.getInput();
-    console.log(input.description === "");
-    console.log(typeof input.value);
+
     if (input.description !== "" && input.value !== "") {
       // 2. Санхүүгийн модульд дамжуулаад тэнд хадгална
       item = fnCtrl.addItem(input.type, input.description, input.value);
@@ -175,6 +211,7 @@ let appController = (function (uiCtrl, fnCtrl) {
       // 5. Үлдэгдлийг тооцоолно
       let budget = fnCtrl.getBudget();
       // 6. Дэлгэцэнд үлдэгдлийг харуулна};
+      uiCtrl.showBudget(budget);
       console.log(budget);
     }
   };
@@ -198,6 +235,12 @@ let appController = (function (uiCtrl, fnCtrl) {
   return {
     init: function () {
       console.log("Application started...");
+      uiCtrl.showBudget({
+        tusuv: 0,
+        totalInc: 0,
+        totalExp: 0,
+        huvi: 0,
+      });
       setupEventListeners();
     },
   };
