@@ -12,43 +12,78 @@ let uiController = (function () {
     percentage: ".budget__expenses--percentage",
     addBtn: ".add__btn",
     container: ".container",
+    expPercentage: ".item__percentage",
+    dateMonth: ".budget__title--month",
   };
 
-  let nodeListForEach = function (nodeList, callback) {
-    for (let i = 0; i < nodeList.length; i++) {
-      callback(nodeList[i]);
+  let nodeListForEach = function (list, callback) {
+    for (let i = 0; i < list.length; i++) {
+      callback(list[i], i);
     }
   };
+
+  let formatMoney = function (num, type) {
+    num += "";
+    let a = num.split("").reverse().join("");
+    let b = "";
+    let count = 1;
+    for (let i = 0; i < a.length; i++) {
+      b += a[i];
+      if (count % 3 === 0) {
+        b += ",";
+      }
+      count++;
+    }
+    b = b.split("").reverse().join("");
+    if (b[0] === ",") b = b.substr(1, b.length - 1);
+    b = type === "inc" ? "+ " + b : "- " + b;
+
+    return b;
+  };
+
   return {
+    displayDate: function () {
+      document.querySelector(DOMStrings.dateMonth).textContent =
+        new Date().getMonth() + 1 + "-р сар";
+    },
+    displayPercentages: function (allPercentages) {
+      let elements = document.querySelectorAll(DOMStrings.expPercentage);
+      nodeListForEach(elements, function (el, index) {
+        el.textContent = `${allPercentages[index]}%`;
+      });
+    },
+
     displayDelete: function (id) {
       let el = document.getElementById(id);
       el.parentNode.removeChild(el);
     },
 
     showBudget: function (budget) {
-      if (budget.tusuv === 0) {
+      let type = budget.tusuv > 0 ? "inc" : "exp";
+      if (budget.tusuv <= 0) {
         document.querySelector(DOMStrings.budgetValue).textContent =
           budget.tusuv;
       } else {
-        document.querySelector(
-          DOMStrings.budgetValue
-        ).textContent = `+ ${budget.tusuv}`;
+        document.querySelector(DOMStrings.budgetValue).textContent =
+          formatMoney(budget.tusuv, type);
       }
       if (budget.totalInc === 0) {
         document.querySelector(DOMStrings.totalInc).textContent =
           budget.totalInc;
       } else {
-        document.querySelector(
-          DOMStrings.totalInc
-        ).textContent = `+ ${budget.totalInc}`;
+        document.querySelector(DOMStrings.totalInc).textContent = formatMoney(
+          budget.totalInc,
+          type
+        );
       }
       if (budget.totalExp === 0) {
         document.querySelector(DOMStrings.totalExp).textContent =
           budget.totalExp;
       } else {
-        document.querySelector(
-          DOMStrings.totalExp
-        ).textContent = `- ${budget.totalExp}`;
+        document.querySelector(DOMStrings.totalExp).textContent = formatMoney(
+          budget.totalExp,
+          type
+        );
       }
       if (budget.huvi === 0) {
         document.querySelector(DOMStrings.percentage).textContent = budget.huvi;
@@ -105,7 +140,7 @@ let uiController = (function () {
       }
       html = html.replace("$$ID$$", item.id);
       html = html.replace("$$DESC$$", item.desc);
-      html = html.replace("$$VAL$$", item.val);
+      html = html.replace("$$VAL$$", formatMoney(item.val, type));
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
 
@@ -141,6 +176,17 @@ let financeController = (function () {
     this.desc = desc;
     // String to number;
     this.val = parseInt(val);
+    this.percentage = -1;
+  };
+
+  Expense.prototype.calcPercentage = function (totalIncome) {
+    if (totalIncome > 0)
+      this.percentage = Math.round((this.val / totalIncome) * 100);
+    else totalIncome = 0;
+  };
+
+  Expense.prototype.getPercentage = function () {
+    return this.percentage;
   };
 
   let calculateTotal = function (type) {
@@ -165,6 +211,19 @@ let financeController = (function () {
   };
 
   return {
+    calcPercentages: function () {
+      data.Items.exp.forEach(function (el) {
+        el.calcPercentage(data.total.inc);
+      });
+    },
+
+    getPercentages: function () {
+      allPercentages = data.Items.exp.map(function (el) {
+        return el.getPercentage();
+      });
+      return allPercentages;
+    },
+
     deleteItem: function (type, id) {
       let ids = data.Items[type].map(function (el) {
         return el.id;
@@ -236,6 +295,12 @@ let appController = (function (uiCtrl, fnCtrl) {
     let budget = fnCtrl.getBudget();
     // 6. Дэлгэцэнд үлдэгдлийг харуулна};
     uiCtrl.showBudget(budget);
+    // 7. Зарлагийн хувийг тооцоолох
+    fnCtrl.calcPercentages();
+    // 8. Хувийг хүлээж авна
+    let allPercentages = fnCtrl.getPercentages();
+    // Дэлгэцэнд харуулна
+    uiCtrl.displayPercentages(allPercentages);
   };
 
   let setupEventListeners = function () {
@@ -280,6 +345,7 @@ let appController = (function (uiCtrl, fnCtrl) {
         totalExp: 0,
         huvi: 0,
       });
+      uiCtrl.displayDate();
       setupEventListeners();
     },
   };
