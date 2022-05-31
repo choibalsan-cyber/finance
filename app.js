@@ -42,6 +42,16 @@ let uiController = (function () {
   };
 
   return {
+    changeType: function () {
+      let fields = document.querySelectorAll(
+        `${DOMStrings.inputType}, ${DOMStrings.inputDescription}, ${DOMStrings.inputValue}`
+      );
+      nodeListForEach(fields, function (el) {
+        el.classList.toggle("red-focus");
+      });
+      document.querySelector(DOMStrings.addBtn).classList.toggle("red");
+    },
+
     displayDate: function () {
       document.querySelector(DOMStrings.dateMonth).textContent =
         new Date().getMonth() + 1 + "-р сар";
@@ -157,6 +167,7 @@ let uiController = (function () {
       return {
         addBtn: DOMStrings.addBtn,
         container: DOMStrings.container,
+        type: DOMStrings.inputType,
       };
     },
   };
@@ -334,6 +345,9 @@ let appController = (function (uiCtrl, fnCtrl) {
         ctrlAddItem();
       }
     });
+    document
+      .querySelector(DOM.type)
+      .addEventListener("change", uiCtrl.changeType);
   };
 
   return {
